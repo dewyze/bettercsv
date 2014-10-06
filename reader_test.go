@@ -302,7 +302,9 @@ func TestRead(t *testing.T) {
         t.Errorf("%s: error at %d:%d expected %d:%d", tt.Name, perr.Line, perr.Column, tt.Line, tt.Column)
       }
     } else if err != nil {
-      t.Errorf("%s: unexpected error %v", tt.Name, err)
+      if !tt.SkipLineOnErr {
+        t.Errorf("%s: unexpected error %v", tt.Name, err)
+      }
     } else if !reflect.DeepEqual(out, tt.Output) {
       t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
     }

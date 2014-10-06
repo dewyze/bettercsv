@@ -108,6 +108,7 @@ type Reader struct {
   LazyQuotes       bool // allow lazy quotes
   TrailingComma    bool // ignored; here for backwards compatibility
   TrimLeadingSpace bool // trim leading space
+  SkipLineOnErr    bool // skip rest of line on error
   line             int
   column           int
   r                *bufio.Reader
@@ -299,6 +300,9 @@ func (r *Reader) parseField() (haveField bool, delim rune, err error) {
         if r1 != '"' {
           if !r.LazyQuotes {
             r.column--
+            if r.SkipLineOnErr {
+              r.skip('\n')
+            }
             return false, 0, r.error(ErrQuote)
           }
           // accept the bare quote
@@ -323,6 +327,9 @@ func (r *Reader) parseField() (haveField bool, delim rune, err error) {
         return true, r1, nil
       }
       if !r.LazyQuotes && r1 == '"' {
+        if r.SkipLineOnErr {
+          r.skip('\n')
+        }
         return false, 0, r.error(ErrBareQuote)
       }
     }
