@@ -23,6 +23,7 @@ var readTests = []struct {
   LazyQuotes       bool
   TrailingComma    bool
   TrimLeadingSpace bool
+  SkipLineOnErr    bool
 
   Error  string
   Line   int // Expected error line if != 0
@@ -250,6 +251,30 @@ x,,,
       {"c", "d", "e"},
     },
   },
+  {
+    Name:             "SkipLine1DoubleQuote",
+    SkipLineOnErr:    true,
+    Input:            `a,b",c,d,e`,
+    Output:           [][]string{{"a","c","d","e"}},
+  },
+  {
+    Name:             "SkipLine2DoubleQuote",
+    SkipLineOnErr:    true,
+    Input:            `a,b"b",c,d,e`,
+    Output:           [][]string{{"a","c","d","e"}},
+  },
+  {
+    Name:             "SkipLineNoOfArgs",
+    SkipLineOnErr:    true,
+    Input:            "a,b,c\nd,e\",f,g\nh,i,j",
+    Output:           [][]string{{"a","b","c","h","i","j"}},
+  },
+  {
+    Name:             "SkipLineExtraneousQuote",
+    SkipLineOnErr:    true,
+    Input:            "a,b,c\nd,\"ee\"e\",f,g\nh,i,j",
+    Output:           [][]string{{"a","b","c","h","i","j"}},
+  },
 }
 
 func TestRead(t *testing.T) {
@@ -264,6 +289,7 @@ func TestRead(t *testing.T) {
     r.LazyQuotes = tt.LazyQuotes
     r.TrailingComma = tt.TrailingComma
     r.TrimLeadingSpace = tt.TrimLeadingSpace
+    r.SkipLineOnErr = tt.SkipLineOnErr
     if tt.Comma != 0 {
       r.Comma = tt.Comma
     }
