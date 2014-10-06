@@ -1,4 +1,4 @@
-// Copyright 2011 The Go Authors. All rights reserved.
+// Copyright 2014 John DeWyze. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -47,7 +47,7 @@
 //
 //  {`Multi-line
 //  field`, `comma is ,`}
-package csv
+package skippycsv
 
 import (
   "bufio"
@@ -99,6 +99,8 @@ var (
 // non-doubled quote may appear in a quoted field.
 //
 // If TrimLeadingSpace is true, leading white space in a field is ignored.
+//
+// If SkipLineOnErr is true, the rest of the line is ignored.
 type Reader struct {
   Comma            rune // field delimiter (set to ',' by NewReader)
   Comment          rune // comment character for start of line
