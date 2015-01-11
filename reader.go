@@ -61,9 +61,10 @@ import (
 // A ParseError is returned for parsing errors.
 // The first line is 1.  The first column is 0.
 type ParseError struct {
-	Line   int   // Line where the error occurred
-	Column int   // Column (rune index) where the error occurred
-	Err    error // The actual error
+	Line   int    // Line where the error occurred
+	Column int    // Column (rune index) where the error occurred
+	Field  string // Field where the error occurred
+	Err    error  // The actual error
 }
 
 func (e *ParseError) Error() string {
@@ -109,6 +110,7 @@ type Reader struct {
 	TrailingComma    bool // ignored; here for backwards compatibility
 	TrimLeadingSpace bool // trim leading space
 	SkipLineOnErr    bool // skip rest of line on error
+	ReturnFieldOnErr bool // return the field where the error occurred
 	line             int
 	column           int
 	r                *bufio.Reader

@@ -24,10 +24,12 @@ var readTests = []struct {
 	TrailingComma    bool
 	TrimLeadingSpace bool
 	SkipLineOnErr    bool
+	ReturnFieldOnErr bool
 
 	Error  string
 	Line   int // Expected error line if != 0
 	Column int // Expected error column if line != 0
+	Field  string
 }{
 	{
 		Name:   "Simple",
@@ -275,6 +277,31 @@ x,,,
 		Input:         "a,b,c\nd,\"ee\"e\",f,g\nh,i,j",
 		Output:        [][]string{{"a", "b", "c", "h", "i", "j"}},
 	},
+	{
+		Name:             "ReturnFieldOnErrBareQuote",
+		ReturnFieldOnErr: true,
+		Input:            `a "word","b"`,
+		Error:            `bare " in non-quoted-field`, Field: "a \"word\"", Line: 1, Column: 2,
+	},
+	{
+		Name:             "ReturnFieldOnErrTrailingQuote",
+		ReturnFieldOnErr: true,
+		Input:            `"a word",b"`,
+		Error:            `bare " in non-quoted-field`, Field: "b\"", Line: 1, Column: 10,
+	},
+	{
+		Name:             "ReturnFieldOnErrExtraneousQuote",
+		ReturnFieldOnErr: true,
+		Input:            `"a "word","b"`,
+		Error:            `extraneous " in field`, Field: "a \"word", Line: 1, Column: 3,
+	},
+	// {
+	// 	Name:               "ReturnFieldOnErrBadFieldCount",
+	// 	UseFieldsPerRecord: true,
+	// 	ReturnFieldOnErr:   true,
+	// 	Input:              "a,b,c\nd,e",
+	// 	Error:              "wrong number of fields", Line: 2,
+	// },
 }
 
 func TestRead(t *testing.T) {
@@ -290,13 +317,16 @@ func TestRead(t *testing.T) {
 		r.TrailingComma = tt.TrailingComma
 		r.TrimLeadingSpace = tt.TrimLeadingSpace
 		r.SkipLineOnErr = tt.SkipLineOnErr
+		r.ReturnFieldOnErr = tt.ReturnFieldOnErr
 		if tt.Comma != 0 {
 			r.Comma = tt.Comma
 		}
 		out, err := r.ReadAll()
 		perr, _ := err.(*ParseError)
 		if tt.Error != "" {
-			if err == nil || !strings.Contains(err.Error(), tt.Error) {
+			if tt.ReturnFieldOnErr && perr.Field != tt.Field {
+				t.Errorf("%s: error %v, want error %q", tt.Name, perr.Field, tt.Field)
+			} else if err == nil || !strings.Contains(err.Error(), tt.Error) {
 				t.Errorf("%s: error %v, want error %q", tt.Name, err, tt.Error)
 			} else if tt.Line != 0 && (tt.Line != perr.Line || tt.Column != perr.Column) {
 				t.Errorf("%s: error at %d:%d expected %d:%d", tt.Name, perr.Line, perr.Column, tt.Line, tt.Column)
