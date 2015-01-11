@@ -254,26 +254,34 @@ x,,,
 	{
 		Name:          "SkipLine1DoubleQuote",
 		SkipLineOnErr: true,
-		Input:         `a,b",c,d,e`,
-		Output:        [][]string{{"a", "c", "d", "e"}},
+		Input:         "a\nb\"\nc",
+		Output:        [][]string{{"a"}, {"c"}},
 	},
 	{
 		Name:          "SkipLine2DoubleQuote",
 		SkipLineOnErr: true,
-		Input:         `a,b"b",c,d,e`,
-		Output:        [][]string{{"a", "c", "d", "e"}},
+		Input:         "a\nb\"b\"\nc",
+		Output:        [][]string{{"a"}, {"c"}},
 	},
 	{
-		Name:          "SkipLineNoOfArgs",
-		SkipLineOnErr: true,
-		Input:         "a,b,c\nd,e\",f,g\nh,i,j",
-		Output:        [][]string{{"a", "b", "c", "h", "i", "j"}},
+		Name:               "SkipLineNoOfArgs",
+		SkipLineOnErr:      true,
+		UseFieldsPerRecord: true,
+		Input:              "a,b,c\nd,e,f,g\nh,i,j",
+		Output:             [][]string{{"a", "b", "c"}, {"h", "i", "j"}},
 	},
 	{
 		Name:          "SkipLineExtraneousQuote",
 		SkipLineOnErr: true,
 		Input:         "a,b,c\nd,\"ee\"e\",f,g\nh,i,j",
-		Output:        [][]string{{"a", "b", "c", "h", "i", "j"}},
+		Output:        [][]string{{"a", "b", "c"}, {"h", "i", "j"}},
+	},
+	{
+		Name:               "SkipLineMultilineField",
+		SkipLineOnErr:      true,
+		UseFieldsPerRecord: true,
+		Input:              "a,b,c\nd,\"e\"\nf\",g\nh,i,j",
+		Output:             [][]string{{"a", "b", "c"}, {"h", "i", "j"}},
 	},
 }
 
@@ -301,10 +309,8 @@ func TestRead(t *testing.T) {
 			} else if tt.Line != 0 && (tt.Line != perr.Line || tt.Column != perr.Column) {
 				t.Errorf("%s: error at %d:%d expected %d:%d", tt.Name, perr.Line, perr.Column, tt.Line, tt.Column)
 			}
-		} else if err != nil {
-			if !tt.SkipLineOnErr {
-				t.Errorf("%s: unexpected error %v", tt.Name, err)
-			}
+		} else if err != nil && !tt.SkipLineOnErr {
+			t.Errorf("%s: unexpected error %v", tt.Name, err)
 		} else if !reflect.DeepEqual(out, tt.Output) {
 			t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
 		}

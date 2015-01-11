@@ -168,6 +168,9 @@ func (r *Reader) ReadAll() (records [][]string, err error) {
 			return records, nil
 		}
 		if err != nil {
+			if r.SkipLineOnErr {
+				continue
+			}
 			return nil, err
 		}
 		records = append(records, record)
