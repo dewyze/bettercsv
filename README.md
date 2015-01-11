@@ -12,10 +12,13 @@ test.csv
 
 
 ```
-first,last,email
-John,Doe,john@doe.com
-Jane,Doe,jane"@doe.com
-Jim,Doe,jim@doe.com
+Jane,Doe",jane@doe.com
+Joan,Doe,joan@doe.com
+Jeff,D"oe",jeff@doe.com
+Jim,Doe,jim,doe.com
+Joan,Doe,joan@doe.com
+Jack,"Do"e",jack@doe.com
+Jill,Doe,jill@doe.com
 ```
 
 test.go
