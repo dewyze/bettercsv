@@ -12,6 +12,7 @@ test.csv
 
 
 ```
+first,last,email
 Jane,Doe",jane@doe.com
 Joan,Doe,joan@doe.com
 Jeff,D"oe",jeff@doe.com
