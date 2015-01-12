@@ -14,7 +14,7 @@ var readTests = []struct {
 	Name               string
 	Input              string
 	Output             [][]string
-	OutputMap          map[string]string
+	OutputMap          []map[string]string
 	UseFieldsPerRecord bool // false (default) means FieldsPerRecord is -1
 
 	// These fields are copied into the Reader
@@ -291,10 +291,13 @@ x,,,
 		Errors:             []string{"line 2, column 0: wrong number of fields in line", "line 3, column 4: bare \" in non-quoted-field"},
 	},
 	{
-		Name:               "ReadWithHeaders",
+		Name:               "ReadAllWithHeaders",
 		UseFieldsPerRecord: true,
-		Input:              "a,b,c\n1,2,3",
-		OutputMap:          map[string]string{"a": "1", "b": "2", "c": "3"},
+		Input:              "a,b,c\n1,2,3\n4,5,6",
+		OutputMap: []map[string]string{
+			{"a": "a", "b": "b", "c": "c"},
+			{"a": "1", "b": "2", "c": "3"},
+			{"a": "4", "b": "5", "c": "6"}},
 	},
 }
 
@@ -314,9 +317,8 @@ func TestRead(t *testing.T) {
 		if tt.Comma != 0 {
 			r.Comma = tt.Comma
 		}
-		if tt.Name == "ReadWithHeaders" {
-			r.ReadWithHeaders() // TODO: Set headers
-			out, err := r.ReadWithHeaders()
+		if tt.Name == "ReadAllWithHeaders" {
+			out, err := r.ReadAllWithHeaders()
 			if err != nil {
 				t.Errorf("%s: unexpected error %v", tt.Name, err)
 			} else if !reflect.DeepEqual(out, tt.OutputMap) {

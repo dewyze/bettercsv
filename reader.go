@@ -183,14 +183,8 @@ func (r *Reader) ReadWithHeaders() (recordMap map[string]string, err error) {
 	} else if r.FieldsPerRecord == 0 {
 		r.FieldsPerRecord = len(record)
 	}
-	if r.line > 1 {
-		for index, field := range record {
-			key := r.headers[index]
-			recordMap[key] = field
-		}
-	}
+	recordMap = r.recordToMap(record)
 
-	// TODO: What to return on headers
 	return recordMap, nil
 }
 
@@ -202,6 +196,27 @@ func (r *Reader) ReadWithHeaders() (recordMap map[string]string, err error) {
 func (r *Reader) ReadAll() (records [][]string, err error) {
 	for {
 		record, err := r.Read()
+		if err == io.EOF {
+			return records, nil
+		}
+		if err != nil {
+			if r.SkipLineOnErr {
+				continue
+			}
+			return nil, err
+		}
+		records = append(records, record)
+	}
+}
+
+// ReadAll reads all the remaining records from r.
+// Each record is a slice of fields.
+// A successful call returns err == nil, not err == EOF. Because ReadAll is
+// defined to read until EOF, it does not treat end of file as an error to be
+// reported.
+func (r *Reader) ReadAllWithHeaders() (records []map[string]string, err error) {
+	for {
+		record, err := r.ReadWithHeaders()
 		if err == io.EOF {
 			return records, nil
 		}
@@ -235,6 +250,17 @@ func (r *Reader) ReadAllWithErrors() (records [][]string, errors []error) {
 			records = append(records, record)
 		}
 	}
+}
+
+// recordToMap will take in a normal csv record and convert it into a map
+// with the headers as the keys and the record values as the values.
+func (r *Reader) recordToMap(record []string) (recordMap map[string]string) {
+	recordMap = make(map[string]string)
+	for index, field := range record {
+		key := r.headers[index]
+		recordMap[key] = field
+	}
+	return recordMap
 }
 
 // readRune reads one rune from r, folding \r\n to \n and keeping track
