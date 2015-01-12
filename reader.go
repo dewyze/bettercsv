@@ -252,6 +252,29 @@ func (r *Reader) ReadAllWithErrors() (records [][]string, errors []error) {
 	}
 }
 
+// ReadAllWithHeadersAndErrors reads all the remaining records from r.
+// Each record is a slice of fields.
+// A successful call returns a slice of maps with headers as the keys and record
+// values as the values and a slice of errors.
+// Because ReadAllWithErrors is defined to read until EOF, it does not treat
+// end of file as an error to be reported.
+func (r *Reader) ReadAllWithHeadersAndErrors() (records []map[string]string, errors []error) {
+	skipLine := r.SkipLineOnErr
+	r.SkipLineOnErr = true
+	for {
+		record, err := r.ReadWithHeaders()
+		if err == io.EOF {
+			r.SkipLineOnErr = skipLine
+			return records, errors
+		}
+		if err != nil {
+			errors = append(errors, err)
+		} else {
+			records = append(records, record)
+		}
+	}
+}
+
 // recordToMap will take in a normal csv record and convert it into a map
 // with the headers as the keys and the record values as the values.
 func (r *Reader) recordToMap(record []string) (recordMap map[string]string) {
