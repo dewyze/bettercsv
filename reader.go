@@ -179,9 +179,9 @@ func (r *Reader) ReadAll() (records [][]string, err error) {
 
 // ReadAllWithErrors reads all the remaining records from r.
 // Each record is a slice of fields.
-// A successful call returns a slice containing all the errors. Because
-// ReadAll is defined to read until EOF, it does not treat end of file as
-// an error to be reported.
+// A successful call returns a slice of records and a slice of errors.
+// Because ReadAllWithErrors is defined to read until EOF, it does not treat
+// end of file as an error to be reported.
 func (r *Reader) ReadAllWithErrors() (records [][]string, errors []error) {
 	skipLine := r.SkipLineOnErr
 	r.SkipLineOnErr = true
