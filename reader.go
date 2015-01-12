@@ -47,7 +47,7 @@
 //
 //  {`Multi-line
 //  field`, `comma is ,`}
-package skippycsv
+package bettercsv
 
 import (
 	"bufio"
