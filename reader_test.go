@@ -307,28 +307,38 @@ func TestRead(t *testing.T) {
 		if tt.Comma != 0 {
 			r.Comma = tt.Comma
 		}
-		out, err := r.ReadAll()
-		perr, _ := err.(*ParseError)
-		if tt.Error != "" && !tt.SkipLineOnErr {
-			if err == nil || !strings.Contains(err.Error(), tt.Error) {
-				t.Errorf("%s: error %v, want error %q", tt.Name, err, tt.Error)
-			} else if tt.Line != 0 && (tt.Line != perr.Line || tt.Column != perr.Column) {
-				t.Errorf("%s: error at %d:%d expected %d:%d", tt.Name, perr.Line, perr.Column, tt.Line, tt.Column)
+		if tt.Name == "ReadWithHeaders" {
+			r.ReadWithHeaders() // TODO: Set headers
+			out, err := r.ReadWithHeaders()
+			if err != nil {
+				t.Errorf("%s: unexpected error %v", tt.Name, err)
+			} else if !reflect.DeepEqual(out, tt.OutputMap) {
+				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.OutputMap)
 			}
-		} else if err != nil && !tt.SkipLineOnErr {
-			t.Errorf("%s: unexpected error %v", tt.Name, err)
-		} else if !reflect.DeepEqual(out, tt.Output) {
-			t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
-		}
-		if tt.SkipLineOnErr {
-			r := NewReader(strings.NewReader(tt.Input))
-			_, errors := r.ReadAllWithErrors()
-			var errorStrings []string
-			for _, err := range errors {
-				errorStrings = append(errorStrings, err.Error())
+		} else {
+			out, err := r.ReadAll()
+			perr, _ := err.(*ParseError)
+			if tt.Error != "" && !tt.SkipLineOnErr {
+				if err == nil || !strings.Contains(err.Error(), tt.Error) {
+					t.Errorf("%s: error %v, want error %q", tt.Name, err, tt.Error)
+				} else if tt.Line != 0 && (tt.Line != perr.Line || tt.Column != perr.Column) {
+					t.Errorf("%s: error at %d:%d expected %d:%d", tt.Name, perr.Line, perr.Column, tt.Line, tt.Column)
+				}
+			} else if err != nil && !tt.SkipLineOnErr {
+				t.Errorf("%s: unexpected error %v", tt.Name, err)
+			} else if !reflect.DeepEqual(out, tt.Output) {
+				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
 			}
-			if !reflect.DeepEqual(errorStrings, tt.Errors) {
-				t.Errorf("%s: errors=%q want %q", tt.Name, errors, tt.Errors)
+			if tt.SkipLineOnErr {
+				r := NewReader(strings.NewReader(tt.Input))
+				_, errors := r.ReadAllWithErrors()
+				var errorStrings []string
+				for _, err := range errors {
+					errorStrings = append(errorStrings, err.Error())
+				}
+				if !reflect.DeepEqual(errorStrings, tt.Errors) {
+					t.Errorf("%s: errors=%q want %q", tt.Name, errors, tt.Errors)
+				}
 			}
 		}
 	}

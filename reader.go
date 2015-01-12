@@ -113,6 +113,7 @@ type Reader struct {
 	column           int
 	r                *bufio.Reader
 	field            bytes.Buffer
+	headers          []string
 }
 
 // NewReader returns a new Reader that reads from r.
@@ -154,6 +155,43 @@ func (r *Reader) Read() (record []string, err error) {
 		r.FieldsPerRecord = len(record)
 	}
 	return record, nil
+}
+
+// Read reads one record from r.  The record is a slice of strings with each
+// string representing one field.
+func (r *Reader) ReadWithHeaders() (recordMap map[string]string, err error) {
+	var record []string
+	recordMap = make(map[string]string)
+	for {
+		record, err = r.parseRecord()
+		if r.line == 1 {
+			r.headers = record
+		}
+		if record != nil {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if r.FieldsPerRecord > 0 {
+		if len(record) != r.FieldsPerRecord {
+			r.column = 0 // report at start of record
+			return nil, r.error(ErrFieldCount)
+		}
+	} else if r.FieldsPerRecord == 0 {
+		r.FieldsPerRecord = len(record)
+	}
+	if r.line > 1 {
+		for index, field := range record {
+			key := r.headers[index]
+			recordMap[key] = field
+		}
+	}
+
+	// TODO: What to return on headers
+	return recordMap, nil
 }
 
 // ReadAll reads all the remaining records from r.
