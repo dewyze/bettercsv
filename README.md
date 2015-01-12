@@ -1,6 +1,6 @@
-# skippycsv
+# bettercsv
 
-Skippycsv is an alternative to the native Go csv. It allows for skipping the rest of the line on an error.
+Bettercsv is an alternative to the native Go csv. It allows for skipping the rest of the line on an error.
 
 ### Problem
 
@@ -69,7 +69,7 @@ line 14, column 0: extraneous " in field
 []
 ```
 
-### skippycsv
+### bettercsv
 
 ```
 [first last email]
@@ -87,11 +87,11 @@ line 8, column 23: extraneous " in field
 [Jill Doe jill@doe.com]
 ```
 
-Notice the line numbers for skippcsv point to their correct lines and Jill Doe was removed completely from the standard csv library.
+Notice the line numbers for bettercsv point to their correct lines and Jill Doe was removed completely from the standard csv library.
 
-To use skippycsv simply set the following to your reader object:
+To use bettercsv simply set the following to your reader object:
 
 ```
-reader := skippycsv.NewReader(csvfile)
+reader := bettercsv.NewReader(csvfile)
 reader.SkipLineOnErr = true
 ```
