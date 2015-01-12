@@ -28,6 +28,7 @@ var readTests = []struct {
 	Error  string
 	Line   int // Expected error line if != 0
 	Column int // Expected error column if line != 0
+	Errors []string
 }{
 	{
 		Name:   "Simple",
@@ -256,12 +257,14 @@ x,,,
 		SkipLineOnErr: true,
 		Input:         "a\nb\"\nc",
 		Output:        [][]string{{"a"}, {"c"}},
+		Errors:        []string{"line 2, column 2: bare \" in non-quoted-field"},
 	},
 	{
 		Name:          "SkipLine2DoubleQuote",
 		SkipLineOnErr: true,
 		Input:         "a\nb\"b\"\nc",
 		Output:        [][]string{{"a"}, {"c"}},
+		Errors:        []string{"line 2, column 4: bare \" in non-quoted-field"},
 	},
 	{
 		Name:               "SkipLineNoOfArgs",
@@ -269,19 +272,22 @@ x,,,
 		UseFieldsPerRecord: true,
 		Input:              "a,b,c\nd,e,f,g\nh,i,j",
 		Output:             [][]string{{"a", "b", "c"}, {"h", "i", "j"}},
+		Errors:             []string{"line 2, column 0: wrong number of fields in line"},
 	},
 	{
 		Name:          "SkipLineExtraneousQuote",
 		SkipLineOnErr: true,
-		Input:         "a,b,c\nd,\"ee\"e\",f,g\nh,i,j",
-		Output:        [][]string{{"a", "b", "c"}, {"h", "i", "j"}},
+		Input:         "a,b,c\nd,\"e\"e\",f\ng,h,i",
+		Output:        [][]string{{"a", "b", "c"}, {"g", "h", "i"}},
+		Errors:        []string{"line 2, column 8: extraneous \" in field"},
 	},
 	{
-		Name:               "SkipLineMultilineField",
+		Name:               "SkipLineMultilineFieldWithErrors",
 		SkipLineOnErr:      true,
 		UseFieldsPerRecord: true,
 		Input:              "a,b,c\nd,\"e\"\nf\",g\nh,i,j",
 		Output:             [][]string{{"a", "b", "c"}, {"h", "i", "j"}},
+		Errors:             []string{"line 2, column 0: wrong number of fields in line", "line 3, column 4: bare \" in non-quoted-field"},
 	},
 }
 
@@ -303,7 +309,7 @@ func TestRead(t *testing.T) {
 		}
 		out, err := r.ReadAll()
 		perr, _ := err.(*ParseError)
-		if tt.Error != "" {
+		if tt.Error != "" && !tt.SkipLineOnErr {
 			if err == nil || !strings.Contains(err.Error(), tt.Error) {
 				t.Errorf("%s: error %v, want error %q", tt.Name, err, tt.Error)
 			} else if tt.Line != 0 && (tt.Line != perr.Line || tt.Column != perr.Column) {
@@ -313,6 +319,17 @@ func TestRead(t *testing.T) {
 			t.Errorf("%s: unexpected error %v", tt.Name, err)
 		} else if !reflect.DeepEqual(out, tt.Output) {
 			t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
+		}
+		if tt.SkipLineOnErr {
+			r := NewReader(strings.NewReader(tt.Input))
+			_, errors := r.ReadAllWithErrors()
+			var errorStrings []string
+			for _, err := range errors {
+				errorStrings = append(errorStrings, err.Error())
+			}
+			if !reflect.DeepEqual(errorStrings, tt.Errors) {
+				t.Errorf("%s: errors=%q want %q", tt.Name, errors, tt.Errors)
+			}
 		}
 	}
 }

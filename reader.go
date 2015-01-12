@@ -177,6 +177,28 @@ func (r *Reader) ReadAll() (records [][]string, err error) {
 	}
 }
 
+// ReadAllWithErrors reads all the remaining records from r.
+// Each record is a slice of fields.
+// A successful call returns a slice containing all the errors. Because
+// ReadAll is defined to read until EOF, it does not treat end of file as
+// an error to be reported.
+func (r *Reader) ReadAllWithErrors() (records [][]string, errors []error) {
+	skipLine := r.SkipLineOnErr
+	r.SkipLineOnErr = true
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			r.SkipLineOnErr = skipLine
+			return records, errors
+		}
+		if err != nil {
+			errors = append(errors, err)
+		} else {
+			records = append(records, record)
+		}
+	}
+}
+
 // readRune reads one rune from r, folding \r\n to \n and keeping track
 // of how far into the line we have read.  r.column will point to the start
 // of this rune, not the end of this rune.
