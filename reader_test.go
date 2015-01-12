@@ -14,6 +14,7 @@ var readTests = []struct {
 	Name               string
 	Input              string
 	Output             [][]string
+	OutputMap          map[string]string
 	UseFieldsPerRecord bool // false (default) means FieldsPerRecord is -1
 
 	// These fields are copied into the Reader
@@ -288,6 +289,12 @@ x,,,
 		Input:              "a,b,c\nd,\"e\"\nf\",g\nh,i,j",
 		Output:             [][]string{{"a", "b", "c"}, {"h", "i", "j"}},
 		Errors:             []string{"line 2, column 0: wrong number of fields in line", "line 3, column 4: bare \" in non-quoted-field"},
+	},
+	{
+		Name:               "ReadWithHeaders",
+		UseFieldsPerRecord: true,
+		Input:              "a,b,c\n1,2,3",
+		OutputMap:          map[string]string{"a": "1", "b": "2", "c": "3"},
 	},
 }
 
