@@ -16,6 +16,8 @@ var readTests = []struct {
 	Output             [][]string
 	OutputMap          []map[string]string
 	UseFieldsPerRecord bool // false (default) means FieldsPerRecord is -1
+	UseHeaders         bool // true means use Headers methods for reading
+	UseHeadersAndErrs  bool // true means use HeadersAndErrors methods for reading
 
 	// These fields are copied into the Reader
 	Comma            rune
@@ -293,6 +295,7 @@ x,,,
 	{
 		Name:               "ReadAllWithHeaders",
 		UseFieldsPerRecord: true,
+		UseHeaders:         true,
 		Input:              "a,b,c\n1,2,3\n4,5,6",
 		OutputMap: []map[string]string{
 			{"a": "a", "b": "b", "c": "c"},
@@ -302,6 +305,7 @@ x,,,
 	{
 		Name:               "ReadAllWithHeadersAndErrors",
 		UseFieldsPerRecord: true,
+		UseHeadersAndErrs:  true,
 		Input:              "a,b,c\n1,2\",3\n4,5,6\n7,8,9,10\n11,12,13",
 		Errors:             []string{"line 2, column 6: bare \" in non-quoted-field", "line 4, column 0: wrong number of fields in line"},
 		OutputMap: []map[string]string{
@@ -327,14 +331,26 @@ func TestRead(t *testing.T) {
 		if tt.Comma != 0 {
 			r.Comma = tt.Comma
 		}
-		if tt.Name == "ReadAllWithHeaders" {
+		if tt.SkipLineOnErr {
+			out, errors := r.ReadAllWithErrors()
+			var errorStrings []string
+			for _, err := range errors {
+				errorStrings = append(errorStrings, err.Error())
+			}
+			if !reflect.DeepEqual(errorStrings, tt.Errors) {
+				t.Errorf("%s: errors=%q want %q", tt.Name, errors, tt.Errors)
+			}
+			if !reflect.DeepEqual(out, tt.Output) {
+				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
+			}
+		} else if tt.UseHeaders {
 			out, err := r.ReadAllWithHeaders()
 			if err != nil {
 				t.Errorf("%s: unexpected error %v", tt.Name, err)
 			} else if !reflect.DeepEqual(out, tt.OutputMap) {
 				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.OutputMap)
 			}
-		} else if tt.Name == "ReadAllWithHeadersAndErrors" {
+		} else if tt.UseHeadersAndErrs {
 			out, errs := r.ReadAllWithHeadersAndErrors()
 			if !reflect.DeepEqual(out, tt.OutputMap) {
 				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.OutputMap)
@@ -343,7 +359,7 @@ func TestRead(t *testing.T) {
 			for _, err := range errs {
 				errorStrings = append(errorStrings, err.Error())
 			}
-			if !reflect.DeepEqual(errs, tt.Errors) {
+			if !reflect.DeepEqual(errorStrings, tt.Errors) {
 				t.Errorf("%s: errors=%q want %q", tt.Name, errorStrings, tt.Errors)
 			}
 		} else {
@@ -359,17 +375,6 @@ func TestRead(t *testing.T) {
 				t.Errorf("%s: unexpected error %v", tt.Name, err)
 			} else if !reflect.DeepEqual(out, tt.Output) {
 				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
-			}
-			if tt.SkipLineOnErr {
-				r := NewReader(strings.NewReader(tt.Input))
-				_, errors := r.ReadAllWithErrors()
-				var errorStrings []string
-				for _, err := range errors {
-					errorStrings = append(errorStrings, err.Error())
-				}
-				if !reflect.DeepEqual(errorStrings, tt.Errors) {
-					t.Errorf("%s: errors=%q want %q", tt.Name, errors, tt.Errors)
-				}
 			}
 		}
 	}
