@@ -384,13 +384,13 @@ func TestRead(t *testing.T) {
 		} else {
 			out, err := r.ReadAll()
 			perr, _ := err.(*ParseError)
-			if tt.Error != "" && !tt.SkipLineOnErr {
+			if tt.Error != "" {
 				if err == nil || !strings.Contains(err.Error(), tt.Error) {
 					t.Errorf("%s: error %v, want error %q", tt.Name, err, tt.Error)
 				} else if tt.Line != 0 && (tt.Line != perr.Line || tt.Column != perr.Column) {
 					t.Errorf("%s: error at %d:%d expected %d:%d", tt.Name, perr.Line, perr.Column, tt.Line, tt.Column)
 				}
-			} else if err != nil && !tt.SkipLineOnErr {
+			} else if err != nil {
 				t.Errorf("%s: unexpected error %v", tt.Name, err)
 			} else if !reflect.DeepEqual(out, tt.Output) {
 				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
