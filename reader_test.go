@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-var readTests = []struct {
+type Test struct {
 	Name               string
 	Input              string
 	Output             [][]string
@@ -32,7 +32,9 @@ var readTests = []struct {
 	Line   int // Expected error line if != 0
 	Column int // Expected error column if line != 0
 	Errors []string
-}{
+}
+
+var readTests = []Test{
 	{
 		Name:   "Simple",
 		Input:  "a,b,c\n",
