@@ -10,6 +10,16 @@ import (
 	"testing"
 )
 
+type BetterCsvTesting struct {
+	t *testing.T
+}
+
+func NewBetterCsvTesting(t *testing.T) *BetterCsvTesting {
+	return &BetterCsvTesting{
+		t: t,
+	}
+}
+
 type Test struct {
 	Name               string
 	Input              string
@@ -317,7 +327,30 @@ x,,,
 	},
 }
 
+func (t *BetterCsvTesting) DeepCompareAllAndPrint(out [][]string, test Test) {
+	if !reflect.DeepEqual(out, test.Output) {
+		t.t.Errorf("%s: out=%q want %q", test.Name, out, test.Output)
+	}
+}
+
+func (t *BetterCsvTesting) DeepCompareErrorAndPrint(errors []error, test Test) {
+	var errorStrings []string
+	for _, err := range errors {
+		errorStrings = append(errorStrings, err.Error())
+	}
+	if !reflect.DeepEqual(errorStrings, test.Errors) {
+		t.t.Errorf("%s: errors=%q want %q", test.Name, errorStrings, test.Errors)
+	}
+}
+
+func (t *BetterCsvTesting) DeepCompareMapAndPrint(out []map[string]string, test Test) {
+	if !reflect.DeepEqual(out, test.OutputMap) {
+		t.t.Errorf("%s: out=%q want %q", test.Name, out, test.OutputMap)
+	}
+}
+
 func TestRead(t *testing.T) {
+	betterCsvTests := NewBetterCsvTesting(t)
 	for _, tt := range readTests {
 		r := NewReader(strings.NewReader(tt.Input))
 		r.Comment = tt.Comment
@@ -335,35 +368,19 @@ func TestRead(t *testing.T) {
 		}
 		if tt.SkipLineOnErr {
 			out, errors := r.ReadAllWithErrors()
-			var errorStrings []string
-			for _, err := range errors {
-				errorStrings = append(errorStrings, err.Error())
-			}
-			if !reflect.DeepEqual(errorStrings, tt.Errors) {
-				t.Errorf("%s: errors=%q want %q", tt.Name, errors, tt.Errors)
-			}
-			if !reflect.DeepEqual(out, tt.Output) {
-				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.Output)
-			}
+			betterCsvTests.DeepCompareErrorAndPrint(errors, tt)
+			betterCsvTests.DeepCompareAllAndPrint(out, tt)
 		} else if tt.UseHeaders {
 			out, err := r.ReadAllWithHeaders()
 			if err != nil {
 				t.Errorf("%s: unexpected error %v", tt.Name, err)
-			} else if !reflect.DeepEqual(out, tt.OutputMap) {
-				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.OutputMap)
+			} else {
+				betterCsvTests.DeepCompareMapAndPrint(out, tt)
 			}
 		} else if tt.UseHeadersAndErrs {
 			out, errs := r.ReadAllWithHeadersAndErrors()
-			if !reflect.DeepEqual(out, tt.OutputMap) {
-				t.Errorf("%s: out=%q want %q", tt.Name, out, tt.OutputMap)
-			}
-			var errorStrings []string
-			for _, err := range errs {
-				errorStrings = append(errorStrings, err.Error())
-			}
-			if !reflect.DeepEqual(errorStrings, tt.Errors) {
-				t.Errorf("%s: errors=%q want %q", tt.Name, errorStrings, tt.Errors)
-			}
+			betterCsvTests.DeepCompareMapAndPrint(out, tt)
+			betterCsvTests.DeepCompareErrorAndPrint(errs, tt)
 		} else {
 			out, err := r.ReadAll()
 			perr, _ := err.(*ParseError)
