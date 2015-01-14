@@ -33,7 +33,7 @@ csvfile, err := os.Open("text.csv")
 reader := bettercsv.NewReader(csvfile)
 ```
 
-Calling `reader.Headers()` will return `{"first","last","email"}`. _Note: Calling `.Headers()` will advance the reader to the second line._
+Calling `reader.Headers()` will return `[first last email]`. _Note: Calling `.Headers()` will advance the reader to the second line._
 
 ### ReadToMap(s)
 Calling `reader.ReadToMap()` (after calling `.Headers()`) will return:
