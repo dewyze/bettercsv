@@ -25,6 +25,7 @@ type Test struct {
 	Input              string
 	Output             [][]string
 	OutputMap          []map[string]string
+	Headers            []string
 	UseFieldsPerRecord bool // false (default) means FieldsPerRecord is -1
 	UseHeaders         bool // true means use Headers methods for reading
 	UseHeadersAndErrs  bool // true means use HeadersAndErrors methods for reading
@@ -305,7 +306,13 @@ x,,,
 		Errors:             []string{"line 2, column 0: wrong number of fields in line", "line 3, column 4: bare \" in non-quoted-field"},
 	},
 	{
-		Name:               "ReadAllWithHeaders",
+		Name:               "GetHeaders",
+		UseFieldsPerRecord: true,
+		Input:              "a,b,c\n1,2,3",
+		Headers:            []string{"a", "b", "c"},
+	},
+	{
+		Name:               "ReadAllToMaps",
 		UseFieldsPerRecord: true,
 		UseHeaders:         true,
 		Input:              "a,b,c\n1,2,3\n4,5,6",
@@ -315,7 +322,7 @@ x,,,
 			{"a": "4", "b": "5", "c": "6"}},
 	},
 	{
-		Name:               "ReadAllWithHeadersAndErrors",
+		Name:               "ReadAllToMapsWithErrors",
 		UseFieldsPerRecord: true,
 		UseHeadersAndErrs:  true,
 		Input:              "a,b,c\n1,2\",3\n4,5,6\n7,8,9,10\n11,12,13",
@@ -366,19 +373,24 @@ func TestRead(t *testing.T) {
 		if tt.Comma != 0 {
 			r.Comma = tt.Comma
 		}
-		if tt.SkipLineOnErr {
+		if tt.Name == "GetHeaders" {
+			r.ReadAllToMaps()
+			if !reflect.DeepEqual(r.Headers, tt.Headers) {
+				t.Errorf("%s: headers=%q, want=%q", tt.Name, r.Headers, tt.Headers)
+			}
+		} else if tt.SkipLineOnErr {
 			out, errors := r.ReadAllWithErrors()
 			betterCsvTests.DeepCompareErrorAndPrint(errors, tt)
 			betterCsvTests.DeepCompareAllAndPrint(out, tt)
 		} else if tt.UseHeaders {
-			out, err := r.ReadAllWithHeaders()
+			out, err := r.ReadAllToMaps()
 			if err != nil {
 				t.Errorf("%s: unexpected error %v", tt.Name, err)
 			} else {
 				betterCsvTests.DeepCompareMapAndPrint(out, tt)
 			}
 		} else if tt.UseHeadersAndErrs {
-			out, errs := r.ReadAllWithHeadersAndErrors()
+			out, errs := r.ReadAllToMapsWithErrors()
 			betterCsvTests.DeepCompareMapAndPrint(out, tt)
 			betterCsvTests.DeepCompareErrorAndPrint(errs, tt)
 		} else {

@@ -102,18 +102,18 @@ var (
 //
 // If SkipLineOnErr is true, the rest of the line is ignored.
 type Reader struct {
-	Comma            rune // field delimiter (set to ',' by NewReader)
-	Comment          rune // comment character for start of line
-	FieldsPerRecord  int  // number of expected fields per record
-	LazyQuotes       bool // allow lazy quotes
-	TrailingComma    bool // ignored; here for backwards compatibility
-	TrimLeadingSpace bool // trim leading space
-	SkipLineOnErr    bool // skip rest of line on error
+	Comma            rune     // field delimiter (set to ',' by NewReader)
+	Comment          rune     // comment character for start of line
+	FieldsPerRecord  int      // number of expected fields per record
+	LazyQuotes       bool     // allow lazy quotes
+	TrailingComma    bool     // ignored; here for backwards compatibility
+	TrimLeadingSpace bool     // trim leading space
+	SkipLineOnErr    bool     // skip rest of line on error
+	Headers          []string // csv headers
 	line             int
 	column           int
 	r                *bufio.Reader
 	field            bytes.Buffer
-	headers          []string
 }
 
 // NewReader returns a new Reader that reads from r.
@@ -157,15 +157,15 @@ func (r *Reader) Read() (record []string, err error) {
 	return record, nil
 }
 
-// Read reads one record from r.  The record is a slice of strings with each
-// string representing one field.
-func (r *Reader) ReadWithHeaders() (recordMap map[string]string, err error) {
+// Read reads one record from r.  The record is a map of strings with each
+// key being the header and value being the field.
+func (r *Reader) ReadToMap() (recordMap map[string]string, err error) {
 	var record []string
 	recordMap = make(map[string]string)
 	for {
 		record, err = r.parseRecord()
 		if r.line == 1 {
-			r.headers = record
+			r.Headers = record
 		}
 		if record != nil {
 			break
@@ -209,14 +209,15 @@ func (r *Reader) ReadAll() (records [][]string, err error) {
 	}
 }
 
-// ReadAll reads all the remaining records from r.
-// Each record is a slice of fields.
+// ReadAllToMap reads all the remaining records from r.
+// Each record is a slice of maps of fields with the header being the key
+// and the field being the value.
 // A successful call returns err == nil, not err == EOF. Because ReadAll is
 // defined to read until EOF, it does not treat end of file as an error to be
 // reported.
-func (r *Reader) ReadAllWithHeaders() (records []map[string]string, err error) {
+func (r *Reader) ReadAllToMaps() (records []map[string]string, err error) {
 	for {
-		record, err := r.ReadWithHeaders()
+		record, err := r.ReadToMap()
 		if err == io.EOF {
 			return records, nil
 		}
@@ -252,17 +253,17 @@ func (r *Reader) ReadAllWithErrors() (records [][]string, errors []error) {
 	}
 }
 
-// ReadAllWithHeadersAndErrors reads all the remaining records from r.
+// ReadAllToMapsWithErrors reads all the remaining records from r.
 // Each record is a slice of fields.
 // A successful call returns a slice of maps with headers as the keys and record
 // values as the values and a slice of errors.
 // Because ReadAllWithErrors is defined to read until EOF, it does not treat
 // end of file as an error to be reported.
-func (r *Reader) ReadAllWithHeadersAndErrors() (records []map[string]string, errors []error) {
+func (r *Reader) ReadAllToMapsWithErrors() (records []map[string]string, errors []error) {
 	skipLine := r.SkipLineOnErr
 	r.SkipLineOnErr = true
 	for {
-		record, err := r.ReadWithHeaders()
+		record, err := r.ReadToMap()
 		if err == io.EOF {
 			r.SkipLineOnErr = skipLine
 			return records, errors
@@ -280,7 +281,7 @@ func (r *Reader) ReadAllWithHeadersAndErrors() (records []map[string]string, err
 func (r *Reader) recordToMap(record []string) (recordMap map[string]string) {
 	recordMap = make(map[string]string)
 	for index, field := range record {
-		key := r.headers[index]
+		key := r.Headers[index]
 		recordMap[key] = field
 	}
 	return recordMap
