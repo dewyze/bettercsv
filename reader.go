@@ -221,8 +221,9 @@ func (r *Reader) ReadAll() (records [][]string, err error) {
 }
 
 // ReadAllToMap reads all the remaining records from r.
-// Each record is a slice of maps of fields with the header being the key
-// and the field being the value.
+// Each record is a slice of
+// A successful call returns a slice of maps of fields with the header being
+// the key and the field being the value.
 // A successful call returns err == nil, not err == EOF. Because ReadAll is
 // defined to read until EOF, it does not treat end of file as an error to be
 // reported.
@@ -247,17 +248,17 @@ func (r *Reader) ReadAllToMaps() (records []map[string]string, err error) {
 // A successful call returns a slice of records and a slice of errors.
 // Because ReadAllWithErrors is defined to read until EOF, it does not treat
 // end of file as an error to be reported.
-func (r *Reader) ReadAllWithErrors() (records [][]string, errors []error) {
+func (r *Reader) ReadAllWithErrors() (records [][]string, errs []error) {
 	skipLine := r.SkipLineOnErr
 	r.SkipLineOnErr = true
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
 			r.SkipLineOnErr = skipLine
-			return records, errors
+			return records, errs
 		}
 		if err != nil {
-			errors = append(errors, err)
+			errs = append(errs, err)
 		} else {
 			records = append(records, record)
 		}
@@ -270,17 +271,17 @@ func (r *Reader) ReadAllWithErrors() (records [][]string, errors []error) {
 // values as the values and a slice of errors.
 // Because ReadAllWithErrors is defined to read until EOF, it does not treat
 // end of file as an error to be reported.
-func (r *Reader) ReadAllToMapsWithErrors() (records []map[string]string, errors []error) {
+func (r *Reader) ReadAllToMapsWithErrors() (records []map[string]string, errs []error) {
 	skipLine := r.SkipLineOnErr
 	r.SkipLineOnErr = true
 	for {
 		record, err := r.ReadToMap()
 		if err == io.EOF {
 			r.SkipLineOnErr = skipLine
-			return records, errors
+			return records, errs
 		}
 		if err != nil {
-			errors = append(errors, err)
+			errs = append(errs, err)
 		} else {
 			records = append(records, record)
 		}

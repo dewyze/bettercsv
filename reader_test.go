@@ -340,13 +340,13 @@ func (t *BetterCsvTesting) DeepCompareAllAndPrint(out [][]string, test Test) {
 	}
 }
 
-func (t *BetterCsvTesting) DeepCompareErrorAndPrint(errors []error, test Test) {
-	var errorStrings []string
-	for _, err := range errors {
-		errorStrings = append(errorStrings, err.Error())
+func (t *BetterCsvTesting) DeepCompareErrorAndPrint(errs []error, test Test) {
+	var errStrings []string
+	for _, err := range errs {
+		errStrings = append(errStrings, err.Error())
 	}
-	if !reflect.DeepEqual(errorStrings, test.Errors) {
-		t.t.Errorf("%s: errors=%q want %q", test.Name, errorStrings, test.Errors)
+	if !reflect.DeepEqual(errStrings, test.Errors) {
+		t.t.Errorf("%s: errors=%q want %q", test.Name, errStrings, test.Errors)
 	}
 }
 
@@ -381,8 +381,8 @@ func TestRead(t *testing.T) {
 				t.Errorf("%s: headers=%q, want=%q", tt.Name, headers, tt.Headers)
 			}
 		} else if tt.SkipLineOnErr {
-			out, errors := r.ReadAllWithErrors()
-			betterCsvTests.DeepCompareErrorAndPrint(errors, tt)
+			out, errs := r.ReadAllWithErrors()
+			betterCsvTests.DeepCompareErrorAndPrint(errs, tt)
 			betterCsvTests.DeepCompareAllAndPrint(out, tt)
 		} else if tt.UseHeaders {
 			out, err := r.ReadAllToMaps()

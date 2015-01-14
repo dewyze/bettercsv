@@ -5,6 +5,18 @@ Bettercsv is an alternative to the native Go csv. It provides several additional
 - Allows reading to maps with the headers as keys and the fields as values.
 - Allows gracefully handling errors to continue reading on error.
 
+```go
+New Attributes:
+  SkipLineOnErr  bool // Skips line when error occurs, allowing reader to continue
+
+New Methods:
+  func (r *Reader) Headers() (headers []string, err error)
+  func (r *Reader) ReadToMap() (recordMap map[string]string, err error)
+  func (r *Reader) ReadAllToMaps() (records []map[string]string, err error)
+  func (r *Reader) ReadAllWithErrors() (records [][]string, errs []error)
+  func (r *Reader) ReadAllToMapsWithErrors() (records []map[string]string, errs []error)
+```
+
 ### Headers
 text.csv
 
@@ -34,7 +46,7 @@ You can call `reader.ReadAllToMaps()` to return a slice of `map[string]string`.
 
 ## Error Handling
 
-When reading line by line using reader.Read(), if an error occurs, `csv` will continue reading from the error and you will receive a cascade of errors. For example:
+When reading line by line using `reader.Read()`, if an error occurs, `csv` will continue reading from the error and you will receive a cascade of errors. For example:
 
 ### Example
 
