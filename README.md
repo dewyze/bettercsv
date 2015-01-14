@@ -17,7 +17,7 @@ Bettercsv is an alternative to the native Go csv. It provides several additional
   func (r *Reader) ReadAllToMapsWithErrors() (records []map[string]string, errs []error)
 ```
 
-### Headers
+## Headers
 text.csv
 
 ```
