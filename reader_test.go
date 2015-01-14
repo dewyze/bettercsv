@@ -374,9 +374,11 @@ func TestRead(t *testing.T) {
 			r.Comma = tt.Comma
 		}
 		if tt.Name == "GetHeaders" {
-			r.ReadAllToMaps()
-			if !reflect.DeepEqual(r.Headers, tt.Headers) {
-				t.Errorf("%s: headers=%q, want=%q", tt.Name, r.Headers, tt.Headers)
+			headers, err := r.Headers()
+			if err != nil {
+				t.Errorf("%s: unexpected error %v", tt.Name, err)
+			} else if !reflect.DeepEqual(headers, tt.Headers) {
+				t.Errorf("%s: headers=%q, want=%q", tt.Name, headers, tt.Headers)
 			}
 		} else if tt.SkipLineOnErr {
 			out, errors := r.ReadAllWithErrors()

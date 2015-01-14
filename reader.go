@@ -102,14 +102,14 @@ var (
 //
 // If SkipLineOnErr is true, the rest of the line is ignored.
 type Reader struct {
-	Comma            rune     // field delimiter (set to ',' by NewReader)
-	Comment          rune     // comment character for start of line
-	FieldsPerRecord  int      // number of expected fields per record
-	LazyQuotes       bool     // allow lazy quotes
-	TrailingComma    bool     // ignored; here for backwards compatibility
-	TrimLeadingSpace bool     // trim leading space
-	SkipLineOnErr    bool     // skip rest of line on error
-	Headers          []string // csv headers
+	Comma            rune // field delimiter (set to ',' by NewReader)
+	Comment          rune // comment character for start of line
+	FieldsPerRecord  int  // number of expected fields per record
+	LazyQuotes       bool // allow lazy quotes
+	TrailingComma    bool // ignored; here for backwards compatibility
+	TrimLeadingSpace bool // trim leading space
+	SkipLineOnErr    bool // skip rest of line on error
+	headers          []string
 	line             int
 	column           int
 	r                *bufio.Reader
@@ -131,6 +131,17 @@ func (r *Reader) error(err error) error {
 		Column: r.column,
 		Err:    err,
 	}
+}
+
+// Return headers if it has been set, or read the first row
+func (r *Reader) Headers() (headers []string, err error) {
+	if r.headers == nil {
+		_, err := r.ReadToMap()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return r.headers, nil
 }
 
 // Read reads one record from r.  The record is a slice of strings with each
@@ -164,8 +175,8 @@ func (r *Reader) ReadToMap() (recordMap map[string]string, err error) {
 	recordMap = make(map[string]string)
 	for {
 		record, err = r.parseRecord()
-		if r.line == 1 {
-			r.Headers = record
+		if r.headers == nil && r.line == 1 {
+			r.headers = record
 		}
 		if record != nil {
 			break
@@ -281,7 +292,7 @@ func (r *Reader) ReadAllToMapsWithErrors() (records []map[string]string, errors 
 func (r *Reader) recordToMap(record []string) (recordMap map[string]string) {
 	recordMap = make(map[string]string)
 	for index, field := range record {
-		key := r.Headers[index]
+		key := r.headers[index]
 		recordMap[key] = field
 	}
 	return recordMap

@@ -1,14 +1,44 @@
 # bettercsv
 
-Bettercsv is an alternative to the native Go csv. It allows for skipping the rest of the line on an error.
+Bettercsv is an alternative to the native Go csv. It provides several additional features:
+- A method for retrieving the headers.
+- Allows reading to maps with the headers as keys and the fields as values.
+- Allows gracefully handling errors to continue reading on error.
 
-### Problem
+### Headers
+text.csv
 
-When reading line by line using reader.Read(), if an error occurs `csv` will continue reading from the error and you will receive a cascade of errors. For example:
+```
+first,last,email
+John,Doe,john@doe.com
+Jane,Doe,jane@doe.com
+```
 
-## Example
+Initialize our reader:
 
-test.csv
+```
+csvfile, err := os.Open("text.csv")
+reader := bettercsv.NewReader(csvfile)
+```
+
+Calling `reader.Headers()` will return `{"first","last","email"}`. _Note: Calling `.Headers()` will advance the reader to the second line._
+
+### ReadToMap(s)
+Calling `reader.ReadToMap()` (after calling `.Headers()`) will return:
+
+```
+[first:John last:Doe email:john@doe.com]
+```
+
+You can call `reader.ReadAllToMaps()` to return a slice of `map[string]string`.
+
+## Error Handling
+
+When reading line by line using reader.Read(), if an error occurs, `csv` will continue reading from the error and you will receive a cascade of errors. For example:
+
+### Example
+
+text.csv
 
 
 ```
@@ -70,6 +100,8 @@ line 14, column 0: extraneous " in field
 ```
 
 ### bettercsv
+With `reader.SkipLineOnErr = true`.
+
 
 ```
 [first last email]
@@ -89,9 +121,24 @@ line 8, column 23: extraneous " in field
 
 Notice the line numbers for bettercsv point to their correct lines and Jill Doe was removed completely from the standard csv library.
 
-To use bettercsv simply set the following to your reader object:
+### ReadWithErrors
+
+If you prefer to use the `reader.ReadAll()` method but still want to skip errors, you can use `reader.ReadAllWithErrors()` to receive both a slice of slices of records and a slice of all the errors.
+
 
 ```
-reader := bettercsv.NewReader(csvfile)
-reader.SkipLineOnErr = true
+values:
+[[John Doe john@doe.com]
+ [June Doe june@doe.com]
+ [Joan Doe joan@doe.com]
+ [Jill Doe jill@doe.com]]
+
+errors:
+[line 3, column 22: bare \" in non-quoted-field
+line 5, column 23: bare " in non-quoted-field
+line 6, column 0: wrong number of fields in line
+line 8, column 23: extraneous " in field]
 ```
+
+You can also combine errors and maps with `reader.ReadAllToMapsWithErrors()`.
+
